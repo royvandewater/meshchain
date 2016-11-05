@@ -1,0 +1,8 @@
+.git
+meshchain
+entrypoint/meshchain
+go-meshchain
+entrypoint/go-meshchain
+build.sh
+cross-compile.sh
+README.md

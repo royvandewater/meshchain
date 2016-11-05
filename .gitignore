@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+meshchain
+entrypoint/meshchain
+go-meshchain
+entrypoint/go-meshchain
+dist
