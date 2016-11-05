@@ -34,6 +34,7 @@ func run(context *cli.Context) {
 
 	log.Printf("Listening on: %v", port)
 	server := httpserver.New(port)
+
 	err := server.Run()
 	if err != nil {
 		log.Fatalln(err.Error())
