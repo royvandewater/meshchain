@@ -1,12 +1,17 @@
 package record
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
+	"io/ioutil"
 )
 
 // Record represents a single stored record
 type Record interface {
+	// PublicKey return the record's public key. Returns
+	// the empty string if the record has no public key.
+	PublicKey() string
+
 	// Save persists the record in local storage
 	Save() error
 
@@ -21,5 +26,15 @@ type Record interface {
 // NewFromReader parses a new record from a reader
 // containing JSON
 func NewFromReader(reader io.Reader) (Record, error) {
-	return nil, fmt.Errorf("not implemented")
+	str, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	data := &Data{}
+	err = json.Unmarshal(str, data)
+	if err != nil {
+		return nil, err
+	}
+	return &redisRecord{data: data}, nil
 }
