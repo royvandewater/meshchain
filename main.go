@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/royvandewater/meshchain/httpserver"
 	"github.com/urfave/cli"
 	De "github.com/visionmedia/go-debug"
 )
@@ -31,8 +32,13 @@ func main() {
 func run(context *cli.Context) {
 	port := getOpts(context)
 
+	log.Printf("Listening on: %v", port)
 	server := httpserver.New(port)
-	server.run()
+	err := server.Run()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	os.Exit(0)
 }
 
 func getOpts(context *cli.Context) int {
