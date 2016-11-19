@@ -1,13 +1,24 @@
 package record
 
+import (
+	"crypto"
+	"crypto/rsa"
+	"crypto/sha256"
+	"fmt"
+	"io"
+)
+
 type redisRecord struct {
-	data *Data
+	metadata *Metadata
+	data     io.Reader
 }
 
-// PublicKey return the record's public key. Returns
-// the empty string if the record has no public key.
-func (record *redisRecord) PublicKey() string {
-	return record.data.PublicKey
+// PublicKeys return the record's public keys. The
+// private keys associated with these public keys are
+// the only ones allowed to modify this version of the
+// record
+func (record *redisRecord) PublicKeys() []string {
+	return record.metadata.PublicKeys
 }
 
 // Save persists the record in local storage
@@ -20,8 +31,37 @@ func (record *redisRecord) ToJSON() (string, error) {
 	return "", nil
 }
 
+// Signature returns the signature provided with
+// this copy of the record
+func (record *redisRecord) Signature() string {
+	return record.metadata.Signature
+}
+
 // Validate verifies that the record is valid.
+// In order to be considered valid, the record
+// must have at least one valid PublicKey and must
+// have a signature from one of the PublicKeys
 // it returns nil when there are no errors
 func (record *redisRecord) Validate() error {
-	return nil
+	publicKeys, err := buildRSAPublicKeys(record.PublicKeys())
+	if err != nil {
+		return err
+	}
+
+	sig := []byte(record.Signature())
+	hashed := record.hashed()
+
+	for _, publicKey := range publicKeys {
+		if nil == rsa.VerifyPSS(publicKey, crypto.SHA256, hashed, sig, nil) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("None of the PublicKeys matches the signature: %v", hashed)
+}
+
+func (record *redisRecord) hashed() []byte {
+	contentToSign := []byte("")
+	hashed := sha256.Sum256(contentToSign)
+	return hashed[:] // [32]byte -> []byte
 }
