@@ -47,14 +47,14 @@ var _ = Describe("Record", func() {
 	Describe("sut.Validate()", func() {
 		Describe("When created with a valid Signature and PublicKey", func() {
 			BeforeEach(func() {
-				publicKey, signature, err := generateKeyAndSignature()
+				publicKey, signature, err := generateKeyAndSignature(`asdf`)
 				Expect(err).To(BeNil())
 
 				metadata := &record.Metadata{
 					PublicKeys: []string{publicKey},
 					Signature:  signature,
 				}
-				data := strings.NewReader(``)
+				data := strings.NewReader(`asdf`)
 
 				sut = record.New(metadata, data)
 			})
@@ -67,7 +67,7 @@ var _ = Describe("Record", func() {
 	})
 })
 
-func generateKeyAndSignature() (string, string, error) {
+func generateKeyAndSignature(data string) (string, string, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		return "", "", err
@@ -86,7 +86,7 @@ func generateKeyAndSignature() (string, string, error) {
 	}
 	publicKeyPem := string(pem.EncodeToMemory(&publicKeyBlock))
 
-	hashed := sha256.Sum256([]byte(""))
+	hashed := sha256.Sum256([]byte(data))
 	signatureBytes, err := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA256, hashed[:], nil)
 	if err != nil {
 		return "", "", err

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/ioutil"
 )
 
 type redisRecord struct {
@@ -49,7 +50,10 @@ func (record *redisRecord) Validate() error {
 	}
 
 	sig := []byte(record.Signature())
-	hashed := record.hashed()
+	hashed, err := record.hashed()
+	if err != nil {
+		return fmt.Errorf("Failed to read data: %v", err.Error())
+	}
 
 	for _, publicKey := range publicKeys {
 		if nil == rsa.VerifyPSS(publicKey, crypto.SHA256, hashed, sig, nil) {
@@ -60,8 +64,13 @@ func (record *redisRecord) Validate() error {
 	return fmt.Errorf("None of the PublicKeys matches the signature: %v", hashed)
 }
 
-func (record *redisRecord) hashed() []byte {
-	contentToSign := []byte("")
+func (record *redisRecord) hashed() ([]byte, error) {
+	data, err := ioutil.ReadAll(record.data)
+	if err != nil {
+		return nil, err
+	}
+
+	contentToSign := []byte(data)
 	hashed := sha256.Sum256(contentToSign)
-	return hashed[:] // [32]byte -> []byte
+	return hashed[:], nil // [32]byte -> []byte
 }
