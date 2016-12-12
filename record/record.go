@@ -29,6 +29,6 @@ type Record interface {
 }
 
 // New instantiates a new record
-func New(metadata *Metadata, data io.Reader) Record {
-	return &redisRecord{metadata: metadata, data: data}
+func New(metadata *Metadata, data io.Reader, signature string) Record {
+	return &redisRecord{metadata: metadata, data: data, signature: signature}
 }

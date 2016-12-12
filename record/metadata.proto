@@ -1,0 +1,5 @@
+package record;
+
+message Metadata {
+  repeated bytes publicKeys = 1;
+}

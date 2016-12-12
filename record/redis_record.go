@@ -10,8 +10,9 @@ import (
 )
 
 type redisRecord struct {
-	metadata *Metadata
-	data     io.Reader
+	metadata  *Metadata
+	data      io.Reader
+	signature string
 }
 
 // PublicKeys return the record's public keys. The
@@ -35,7 +36,7 @@ func (record *redisRecord) ToJSON() (string, error) {
 // Signature returns the signature provided with
 // this copy of the record
 func (record *redisRecord) Signature() string {
-	return record.metadata.Signature
+	return record.signature
 }
 
 // Validate verifies that the record is valid.
@@ -61,16 +62,17 @@ func (record *redisRecord) Validate() error {
 		}
 	}
 
-	return fmt.Errorf("None of the PublicKeys matches the signature: %v", hashed)
+	return fmt.Errorf("None of the PublicKeys matches the signature")
 }
 
 func (record *redisRecord) hashed() ([]byte, error) {
+	// metadata := record.metadata.MarshalBinary()
+
 	data, err := ioutil.ReadAll(record.data)
 	if err != nil {
 		return nil, err
 	}
 
-	contentToSign := []byte(data)
-	hashed := sha256.Sum256(contentToSign)
+	hashed := sha256.Sum256(data)
 	return hashed[:], nil // [32]byte -> []byte
 }
