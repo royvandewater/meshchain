@@ -11,13 +11,14 @@ import (
 // Metadata defines the metadata of a record
 type Metadata struct {
 	ID         string
+	LocalID    string
 	PublicKeys []string
 }
 
 // GenerateID returns a deterministic ID that is
-// a function of the publicKeys and an optional localName
+// a function of the PublicKeys and LocalID
 func (metadata *Metadata) GenerateID() string {
-	return generators.ID("", metadata.PublicKeys)
+	return generators.ID(metadata.LocalID, metadata.PublicKeys)
 }
 
 // MarshalBinary returns the binary representation of Metadata
@@ -37,7 +38,11 @@ func (metadata *Metadata) Proto() (*encoding.Metadata, error) {
 		return nil, err
 	}
 
-	return &encoding.Metadata{PublicKeys: PublicKeys}, nil
+	return &encoding.Metadata{
+		ID:         metadata.ID,
+		LocalID:    metadata.LocalID,
+		PublicKeys: PublicKeys,
+	}, nil
 }
 
 // publicKeysAsBytes converts the public keys to their raw bytes

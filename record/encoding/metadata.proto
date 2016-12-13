@@ -4,5 +4,6 @@ package encoding;
 
 message Metadata {
   string ID = 1;
-  repeated bytes PublicKeys = 2;
+  string LocalID = 2;
+  repeated bytes PublicKeys = 3;
 }

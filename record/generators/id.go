@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-// ID returns a deterministic ID that is
-// a function of the publicKeys and an optional localName
-func ID(localName string, publicKeys []string) string {
-	toHash := fmt.Sprintf("%v:%v", "", strings.Join(publicKeys, ","))
+// ID returns a deterministic ID that is  a function of the localID and
+// publicKeys
+func ID(localID string, publicKeys []string) string {
+	toHash := fmt.Sprintf("%v:%v", localID, strings.Join(publicKeys, ","))
 	hash := sha256.Sum256([]byte(toHash))
 
 	part1 := hash[0:4]
