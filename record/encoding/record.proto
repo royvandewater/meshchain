@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package encoding;
+
+import "metadata.proto";
+
+message Record {
+  Metadata metadata = 1;
+  bytes data = 2;
+}

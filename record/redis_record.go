@@ -5,13 +5,14 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"io"
-	"io/ioutil"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/royvandewater/meshchain/record/encoding"
 )
 
 type redisRecord struct {
 	metadata  *Metadata
-	data      io.Reader
+	data      []byte
 	signature string
 }
 
@@ -39,25 +40,26 @@ func (record *redisRecord) Signature() string {
 	return record.signature
 }
 
-// Validate verifies that the record is valid.
-// In order to be considered valid, the record
-// must have at least one valid PublicKey and must
-// have a signature from one of the PublicKeys
-// it returns nil when there are no errors
-func (record *redisRecord) Validate() error {
+// SetSignature sets the signature for this version of the record
+// and verifies that the record is valid. In order to be considered
+// valid, the record must have at least one valid PublicKey and must
+// have a signature from one of the PublicKeys it returns nil when
+// there are no errors
+func (record *redisRecord) SetSignature(signature string) error {
 	publicKeys, err := buildRSAPublicKeys(record.PublicKeys())
 	if err != nil {
 		return err
 	}
 
-	sig := []byte(record.Signature())
-	hashed, err := record.hashed()
+	sig := []byte(signature)
+	hashed, err := record.Hash()
 	if err != nil {
-		return fmt.Errorf("Failed to read data: %v", err.Error())
+		return fmt.Errorf("Failed to generate Hash: %v", err.Error())
 	}
 
 	for _, publicKey := range publicKeys {
 		if nil == rsa.VerifyPSS(publicKey, crypto.SHA256, hashed, sig, nil) {
+			record.signature = signature
 			return nil
 		}
 	}
@@ -65,14 +67,22 @@ func (record *redisRecord) Validate() error {
 	return fmt.Errorf("None of the PublicKeys matches the signature")
 }
 
-func (record *redisRecord) hashed() ([]byte, error) {
-	// metadata := record.metadata.MarshalBinary()
-
-	data, err := ioutil.ReadAll(record.data)
+// Hash returns the sha256 hash of the record, minus the signature. This
+// is the portion of the record that must be signed
+func (record *redisRecord) Hash() ([]byte, error) {
+	metadata, err := record.metadata.Proto()
 	if err != nil {
 		return nil, err
 	}
 
-	hashed := sha256.Sum256(data)
+	bytes, err := proto.Marshal(&encoding.Record{
+		Metadata: metadata,
+		Data:     record.data,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hashed := sha256.Sum256(bytes)
 	return hashed[:], nil // [32]byte -> []byte
 }

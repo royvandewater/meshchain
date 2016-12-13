@@ -4,10 +4,8 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
-	"strings"
 
 	"github.com/royvandewater/meshchain/record"
 
@@ -17,16 +15,17 @@ import (
 
 var _ = Describe("Record", func() {
 	var sut record.Record
+	var err error
 
 	Describe("New", func() {
-		Describe("When given JSON with a publicKey", func() {
+		Describe("When given Metadata with a publicKey", func() {
 			BeforeEach(func() {
 				metadata := &record.Metadata{
 					PublicKeys: []string{"key"},
 				}
-				data := strings.NewReader(`random data`)
+				data := []byte(`random data`)
 
-				sut = record.New(metadata, data, "signature")
+				sut = record.New(metadata, []byte(data))
 			})
 
 			It("should create a sut", func() {
@@ -37,47 +36,53 @@ var _ = Describe("Record", func() {
 				Expect(sut.PublicKeys()).To(ContainElement("key"))
 			})
 
-			It("should have a Signature", func() {
-				Expect(sut.Signature()).To(Equal("signature"))
+			It("should not have a Signature", func() {
+				Expect(sut.Signature()).To(Equal(""))
 			})
 		})
 	})
 
-	Describe("sut.Validate()", func() {
+	Describe("sut.SetSignature()", func() {
 		Describe("When created with a valid Signature and PublicKey", func() {
 			BeforeEach(func() {
-				publicKey, signature, err := generateKeyAndSignature(`asdf`)
-				Expect(err).To(BeNil())
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
 
 				metadata := &record.Metadata{
 					PublicKeys: []string{publicKey},
 				}
-				data := strings.NewReader(`asdf`)
+				data := []byte(`asdf`)
+				sut = record.New(metadata, data)
 
-				sut = record.New(metadata, data, signature)
+				signature, beforeErr := generateSignature(sut, privateKey)
+				Expect(beforeErr).To(BeNil())
+				err = sut.SetSignature(signature)
 			})
 
 			It("should not yield an error", func() {
-				err := sut.Validate()
 				Expect(err).To(BeNil())
 			})
 		})
 
 		Describe("When created with a valid publicKey, but Signature doesn't match the data", func() {
 			BeforeEach(func() {
-				publicKey, signature, err := generateKeyAndSignature(`asdf`)
-				Expect(err).To(BeNil())
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
 
 				metadata := &record.Metadata{
 					PublicKeys: []string{publicKey},
 				}
-				data := strings.NewReader(`asdfa`)
+				data := []byte(`asdf`)
+				wrongData := []byte(`wrong`)
 
-				sut = record.New(metadata, data, signature)
+				signature, beforeErr := generateSignature(record.New(metadata, wrongData), privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut = record.New(metadata, data)
+				err = sut.SetSignature(signature)
 			})
 
 			It("should yield an error", func() {
-				err := sut.Validate()
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(Equal("None of the PublicKeys matches the signature"))
 			})
@@ -85,22 +90,29 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with a valid publicKey, but Signature doesn't match the metadata", func() {
 			BeforeEach(func() {
-				publicKey, signature, err := generateKeyAndSignature(`asdf`)
-				Expect(err).To(BeNil())
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
 
-				publicKey2, _, err := generatePublicPrivateKeyPair()
-				Expect(err).To(BeNil())
+				publicKey2, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
 
 				metadata := &record.Metadata{
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+
+				wrongMetadata := &record.Metadata{
 					PublicKeys: []string{publicKey, publicKey2},
 				}
-				data := strings.NewReader(`asdf`)
 
-				sut = record.New(metadata, data, signature)
+				signature, beforeErr := generateSignature(record.New(wrongMetadata, data), privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut = record.New(metadata, data)
+				err = sut.SetSignature(signature)
 			})
 
 			It("should yield an error", func() {
-				err := sut.Validate()
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(Equal("None of the PublicKeys matches the signature"))
 			})
@@ -108,7 +120,7 @@ var _ = Describe("Record", func() {
 	})
 })
 
-func generatePublicPrivateKeyPair() (string, *rsa.PrivateKey, error) {
+func generateKeys() (string, *rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		return "", nil, err
@@ -129,18 +141,16 @@ func generatePublicPrivateKeyPair() (string, *rsa.PrivateKey, error) {
 	return publicKeyPem, privateKey, nil
 }
 
-func generateKeyAndSignature(data string) (string, string, error) {
-	publicKeyPem, privateKey, err := generatePublicPrivateKeyPair()
+func generateSignature(rec record.Record, privateKey *rsa.PrivateKey) (string, error) {
+	hash, err := rec.Hash()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	hashed := sha256.Sum256([]byte(data))
-	signatureBytes, err := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA256, hashed[:], nil)
+	signatureBytes, err := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA256, hash, nil)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	signature := string(signatureBytes)
-	return publicKeyPem, signature, nil
+	return string(signatureBytes), nil
 }
