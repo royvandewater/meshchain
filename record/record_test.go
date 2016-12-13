@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 
 	"github.com/royvandewater/meshchain/record"
+	"github.com/royvandewater/meshchain/record/generators"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,14 +19,25 @@ var _ = Describe("Record", func() {
 	var err error
 
 	Describe("New", func() {
-		Describe("When given Metadata with a publicKey", func() {
+		Describe("When given Metadata with an ID and a publicKey", func() {
+			var publicKey string
+
 			BeforeEach(func() {
-				metadata := &record.Metadata{
-					PublicKeys: []string{"key"},
+				publicKey, _, err = generateKeys()
+				Expect(err).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`random data`)
 
-				sut = record.New(metadata, []byte(data))
+				sut, err = record.New(metadata, []byte(data))
+				Expect(err).To(BeNil())
+			})
+
+			It("should not yield an error", func() {
+				Expect(err).To(BeNil())
 			})
 
 			It("should create a sut", func() {
@@ -33,11 +45,49 @@ var _ = Describe("Record", func() {
 			})
 
 			It("should have a publicKey", func() {
-				Expect(sut.PublicKeys()).To(ContainElement("key"))
+				Expect(sut.PublicKeys()).To(ContainElement(publicKey))
 			})
 
 			It("should not have a Signature", func() {
 				Expect(sut.Signature()).To(Equal(""))
+			})
+		})
+
+		Describe("When created with no metadata.ID", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         "",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.New(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata must contain an ID"))
+			})
+		})
+
+		Describe("When created with an invalid metadata.ID", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         "invalid",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.New(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
 			})
 		})
 	})
@@ -48,11 +98,13 @@ var _ = Describe("Record", func() {
 				publicKey, privateKey, beforeErr := generateKeys()
 				Expect(beforeErr).To(BeNil())
 
-				metadata := &record.Metadata{
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
-				sut = record.New(metadata, data)
+				sut, beforeErr = record.New(metadata, data)
+				Expect(beforeErr).To(BeNil())
 
 				signature, beforeErr := generateSignature(sut, privateKey)
 				Expect(beforeErr).To(BeNil())
@@ -69,16 +121,20 @@ var _ = Describe("Record", func() {
 				publicKey, privateKey, beforeErr := generateKeys()
 				Expect(beforeErr).To(BeNil())
 
-				metadata := &record.Metadata{
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
 				wrongData := []byte(`wrong`)
 
-				signature, beforeErr := generateSignature(record.New(metadata, wrongData), privateKey)
+				badRecord, beforeErr := record.New(metadata, wrongData)
+				Expect(beforeErr).To(BeNil())
+				signature, beforeErr := generateSignature(badRecord, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut = record.New(metadata, data)
+				sut, beforeErr = record.New(metadata, data)
+				Expect(beforeErr).To(BeNil())
 				err = sut.SetSignature(signature)
 			})
 
@@ -96,19 +152,24 @@ var _ = Describe("Record", func() {
 				publicKey2, _, beforeErr := generateKeys()
 				Expect(beforeErr).To(BeNil())
 
-				metadata := &record.Metadata{
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
 
-				wrongMetadata := &record.Metadata{
+				wrongMetadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey, publicKey2}),
 					PublicKeys: []string{publicKey, publicKey2},
 				}
 
-				signature, beforeErr := generateSignature(record.New(wrongMetadata, data), privateKey)
+				badRecord, beforeErr := record.New(wrongMetadata, data)
+				Expect(beforeErr).To(BeNil())
+				signature, beforeErr := generateSignature(badRecord, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut = record.New(metadata, data)
+				sut, beforeErr = record.New(metadata, data)
+				Expect(beforeErr).To(BeNil())
 				err = sut.SetSignature(signature)
 			})
 

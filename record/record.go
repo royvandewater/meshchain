@@ -29,7 +29,15 @@ type Record interface {
 	Signature() string
 }
 
-// New instantiates a new record
-func New(metadata *Metadata, data []byte) Record {
-	return &redisRecord{metadata: metadata, data: data}
+// New instantiates a new record. Records must be valid at time of creation.
+// This means they must have at least one publicKey, and a metadata.ID, which
+// must be a hash of all publicKeys on the record combined with an optional
+// metadata.localID.
+func New(metadata Metadata, data []byte) (Record, error) {
+	record := &redisRecord{metadata: metadata, data: data}
+	err := record.validate()
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
 }

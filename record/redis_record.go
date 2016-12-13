@@ -11,9 +11,29 @@ import (
 )
 
 type redisRecord struct {
-	metadata  *Metadata
+	metadata  Metadata
 	data      []byte
 	signature string
+}
+
+// Hash returns the sha256 hash of the record, minus the signature. This
+// is the portion of the record that must be signed
+func (record *redisRecord) Hash() ([]byte, error) {
+	metadata, err := record.metadata.Proto()
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := proto.Marshal(&encoding.Record{
+		Metadata: metadata,
+		Data:     record.data,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hashed := sha256.Sum256(bytes)
+	return hashed[:], nil // [32]byte -> []byte
 }
 
 // PublicKeys return the record's public keys. The
@@ -27,17 +47,6 @@ func (record *redisRecord) PublicKeys() []string {
 // Save persists the record in local storage
 func (record *redisRecord) Save() error {
 	return nil
-}
-
-// ToJSON serializes the record and return JSON output
-func (record *redisRecord) ToJSON() (string, error) {
-	return "", nil
-}
-
-// Signature returns the signature provided with
-// this copy of the record
-func (record *redisRecord) Signature() string {
-	return record.signature
 }
 
 // SetSignature sets the signature for this version of the record
@@ -67,22 +76,23 @@ func (record *redisRecord) SetSignature(signature string) error {
 	return fmt.Errorf("None of the PublicKeys matches the signature")
 }
 
-// Hash returns the sha256 hash of the record, minus the signature. This
-// is the portion of the record that must be signed
-func (record *redisRecord) Hash() ([]byte, error) {
-	metadata, err := record.metadata.Proto()
-	if err != nil {
-		return nil, err
-	}
+// Signature returns the signature provided with
+// this copy of the record
+func (record *redisRecord) Signature() string {
+	return record.signature
+}
 
-	bytes, err := proto.Marshal(&encoding.Record{
-		Metadata: metadata,
-		Data:     record.data,
-	})
-	if err != nil {
-		return nil, err
-	}
+// ToJSON serializes the record and return JSON output
+func (record *redisRecord) ToJSON() (string, error) {
+	return "", nil
+}
 
-	hashed := sha256.Sum256(bytes)
-	return hashed[:], nil // [32]byte -> []byte
+func (record *redisRecord) validate() error {
+	if record.metadata.ID == "" {
+		return fmt.Errorf("metadata must contain an ID")
+	}
+	if record.metadata.ID != record.metadata.GenerateID() {
+		return fmt.Errorf("metadata.ID does not match publicKeys + localName")
+	}
+	return nil
 }

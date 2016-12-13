@@ -3,6 +3,6 @@ syntax = "proto3";
 package encoding;
 
 message Metadata {
-  string id = 1;
-  repeated bytes publicKeys = 2;
+  string ID = 1;
+  repeated bytes PublicKeys = 2;
 }
