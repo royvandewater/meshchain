@@ -3,11 +3,7 @@ package record
 import (
 	"crypto"
 	"crypto/rsa"
-	"crypto/sha256"
 	"fmt"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/royvandewater/meshchain/record/encoding"
 )
 
 type redisRecord struct {
@@ -16,24 +12,16 @@ type redisRecord struct {
 	signature string
 }
 
-// Hash returns the sha256 hash of the record, minus the signature. This
+// Hash returns the sha256 hash of the record. This incorporates
+// only the Data and Metadata properties, not the signature. This
 // is the portion of the record that must be signed
 func (record *redisRecord) Hash() ([]byte, error) {
-	metadata, err := record.metadata.Proto()
+	unsignedRootRecord, err := NewUnsignedRootRecord(record.metadata, record.data)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := proto.Marshal(&encoding.Record{
-		Metadata: metadata,
-		Data:     record.data,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	hashed := sha256.Sum256(bytes)
-	return hashed[:], nil // [32]byte -> []byte
+	return unsignedRootRecord.Hash()
 }
 
 // PublicKeys return the record's public keys. The
@@ -85,14 +73,4 @@ func (record *redisRecord) Signature() string {
 // ToJSON serializes the record and return JSON output
 func (record *redisRecord) ToJSON() (string, error) {
 	return "", nil
-}
-
-func (record *redisRecord) validate() error {
-	if record.metadata.ID == "" {
-		return fmt.Errorf("metadata must contain an ID")
-	}
-	if record.metadata.ID != record.metadata.GenerateID() {
-		return fmt.Errorf("metadata.ID does not match publicKeys + localName")
-	}
-	return nil
 }

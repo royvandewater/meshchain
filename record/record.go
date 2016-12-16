@@ -34,10 +34,10 @@ type Record interface {
 // must be a hash of all publicKeys on the record combined with an optional
 // metadata.localID.
 func New(metadata Metadata, data []byte) (Record, error) {
-	record := &redisRecord{metadata: metadata, data: data}
-	err := record.validate()
+	_, err := NewUnsignedRootRecord(metadata, data)
 	if err != nil {
 		return nil, err
 	}
-	return record, nil
+
+	return &redisRecord{metadata: metadata, data: data}, nil
 }
