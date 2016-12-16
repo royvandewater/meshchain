@@ -23,7 +23,9 @@ var _ = Describe("Record", func() {
 			var publicKey string
 
 			BeforeEach(func() {
-				publicKey, _, err = generateKeys()
+				var privateKey *rsa.PrivateKey
+
+				publicKey, privateKey, err = generateKeys()
 				Expect(err).To(BeNil())
 
 				metadata := record.Metadata{
@@ -32,24 +34,31 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`random data`)
 
-				sut, err = record.New(metadata, []byte(data))
-				Expect(err).To(BeNil())
-			})
+				signature, beforeErr := generateSignature(metadata, data, privateKey)
+				Expect(beforeErr).To(BeNil())
 
-			It("should not yield an error", func() {
+				sut, err = record.New(metadata, data, signature)
 				Expect(err).To(BeNil())
 			})
 
 			It("should create a sut", func() {
 				Expect(sut).NotTo(BeNil())
 			})
+		})
 
-			It("should have a publicKey", func() {
-				Expect(sut.PublicKeys()).To(ContainElement(publicKey))
+		Describe("When created with no metadata.publicKeys", func() {
+			BeforeEach(func() {
+				metadata := record.Metadata{
+					ID:         "whatevs",
+					PublicKeys: []string{},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.New(metadata, data, "")
 			})
 
-			It("should not have a Signature", func() {
-				Expect(sut.Signature()).To(Equal(""))
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata must contain at least one publicKey"))
 			})
 		})
 
@@ -63,7 +72,8 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
-				sut, err = record.New(metadata, data)
+
+				sut, err = record.New(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -82,7 +92,8 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
-				sut, err = record.New(metadata, data)
+
+				sut, err = record.New(metadata, data, "shoudn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -101,7 +112,8 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
-				sut, err = record.New(metadata, data)
+
+				sut, err = record.New(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -121,149 +133,13 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 				data := []byte(`asdf`)
-				sut, err = record.New(metadata, data)
+
+				sut, err = record.New(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
-			})
-		})
-	})
-
-	Describe("sut.Hash()", func() {
-		Describe("two suts with the same metadata", func() {
-			var hash1, hash2 []byte
-
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata1 := record.Metadata{
-					ID:         generators.ID("name", []string{publicKey}),
-					LocalID:    "name",
-					PublicKeys: []string{publicKey},
-				}
-				metadata2 := record.Metadata{
-					ID:         generators.ID("name", []string{publicKey}),
-					LocalID:    "name",
-					PublicKeys: []string{publicKey},
-				}
-
-				sut1, beforeErr := record.New(metadata1, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				sut2, beforeErr := record.New(metadata2, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				hash1, err = sut1.Hash()
-				Expect(err).To(BeNil())
-
-				hash2, err = sut2.Hash()
-				Expect(err).To(BeNil())
-			})
-
-			It("should have the same hashes", func() {
-				Expect(hash1).To(Equal(hash2))
-			})
-		})
-
-		Describe("two suts with different publicKeys", func() {
-			var hash1, hash2 []byte
-
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", []string{publicKey}),
-					PublicKeys: []string{publicKey},
-				}
-				sut, beforeErr := record.New(metadata, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				hash1, err = sut.Hash()
-				Expect(err).To(BeNil())
-			})
-
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", []string{publicKey}),
-					PublicKeys: []string{publicKey},
-				}
-				sut, beforeErr := record.New(metadata, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				hash2, err = sut.Hash()
-				Expect(err).To(BeNil())
-			})
-
-			It("should have different hashes", func() {
-				Expect(hash1).NotTo(Equal(hash2))
-			})
-		})
-
-		Describe("two suts with different localNames", func() {
-			var hash1, hash2 []byte
-
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata1 := record.Metadata{
-					ID:         generators.ID("name-1", []string{publicKey}),
-					LocalID:    "name-1",
-					PublicKeys: []string{publicKey},
-				}
-				metadata2 := record.Metadata{
-					ID:         generators.ID("name-2", []string{publicKey}),
-					LocalID:    "name-2",
-					PublicKeys: []string{publicKey},
-				}
-
-				sut1, beforeErr := record.New(metadata1, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				sut2, beforeErr := record.New(metadata2, []byte{})
-				Expect(beforeErr).To(BeNil())
-
-				hash1, err = sut1.Hash()
-				Expect(err).To(BeNil())
-
-				hash2, err = sut2.Hash()
-				Expect(err).To(BeNil())
-			})
-
-			It("should have different hashes", func() {
-				Expect(hash1).NotTo(Equal(hash2))
-			})
-		})
-	})
-
-	Describe("sut.SetSignature()", func() {
-		Describe("When created with a valid Signature and PublicKey", func() {
-			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", []string{publicKey}),
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`asdf`)
-				sut, beforeErr = record.New(metadata, data)
-				Expect(beforeErr).To(BeNil())
-
-				signature, beforeErr := generateSignature(sut, privateKey)
-				Expect(beforeErr).To(BeNil())
-				err = sut.SetSignature(signature)
-			})
-
-			It("should not yield an error", func() {
-				Expect(err).To(BeNil())
 			})
 		})
 
@@ -279,14 +155,10 @@ var _ = Describe("Record", func() {
 				data := []byte(`asdf`)
 				wrongData := []byte(`wrong`)
 
-				badRecord, beforeErr := record.New(metadata, wrongData)
-				Expect(beforeErr).To(BeNil())
-				signature, beforeErr := generateSignature(badRecord, privateKey)
+				signature, beforeErr := generateSignature(metadata, wrongData, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut, beforeErr = record.New(metadata, data)
-				Expect(beforeErr).To(BeNil())
-				err = sut.SetSignature(signature)
+				_, err = record.New(metadata, data, signature)
 			})
 
 			It("should yield an error", func() {
@@ -314,14 +186,10 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey, publicKey2},
 				}
 
-				badRecord, beforeErr := record.New(wrongMetadata, data)
-				Expect(beforeErr).To(BeNil())
-				signature, beforeErr := generateSignature(badRecord, privateKey)
+				signature, beforeErr := generateSignature(wrongMetadata, data, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut, beforeErr = record.New(metadata, data)
-				Expect(beforeErr).To(BeNil())
-				err = sut.SetSignature(signature)
+				_, err = record.New(metadata, data, signature)
 			})
 
 			It("should yield an error", func() {
@@ -329,6 +197,141 @@ var _ = Describe("Record", func() {
 				Expect(err.Error()).To(Equal("None of the PublicKeys matches the signature"))
 			})
 		})
+	})
+
+	Describe("sut.Hash()", func() {
+		Describe("two suts with the same metadata", func() {
+			var hash1, hash2 []byte
+
+			BeforeEach(func() {
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata1 := record.Metadata{
+					ID:         generators.ID("name", []string{publicKey}),
+					LocalID:    "name",
+					PublicKeys: []string{publicKey},
+				}
+				metadata2 := record.Metadata{
+					ID:         generators.ID("name", []string{publicKey}),
+					LocalID:    "name",
+					PublicKeys: []string{publicKey},
+				}
+
+				signature1, beforeErr := generateSignature(metadata1, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut1, beforeErr := record.New(metadata1, []byte{}, signature1)
+				Expect(beforeErr).To(BeNil())
+
+				sut2, beforeErr := record.New(metadata2, []byte{}, signature2)
+				Expect(beforeErr).To(BeNil())
+
+				hash1, err = sut1.Hash()
+				Expect(err).To(BeNil())
+
+				hash2, err = sut2.Hash()
+				Expect(err).To(BeNil())
+			})
+
+			It("should have the same hashes", func() {
+				Expect(hash1).To(Equal(hash2))
+			})
+		})
+
+		Describe("two suts with different publicKeys", func() {
+			var hash1, hash2 []byte
+
+			BeforeEach(func() {
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					PublicKeys: []string{publicKey},
+				}
+
+				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut, beforeErr := record.New(metadata, []byte{}, signature)
+				Expect(beforeErr).To(BeNil())
+
+				hash1, err = sut.Hash()
+				Expect(err).To(BeNil())
+			})
+
+			BeforeEach(func() {
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					PublicKeys: []string{publicKey},
+				}
+
+				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut, beforeErr := record.New(metadata, []byte{}, signature)
+				Expect(beforeErr).To(BeNil())
+
+				hash2, err = sut.Hash()
+				Expect(err).To(BeNil())
+			})
+
+			It("should have different hashes", func() {
+				Expect(hash1).NotTo(Equal(hash2))
+			})
+		})
+
+		Describe("two suts with different localNames", func() {
+			var hash1, hash2 []byte
+
+			BeforeEach(func() {
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata1 := record.Metadata{
+					ID:         generators.ID("name-1", []string{publicKey}),
+					LocalID:    "name-1",
+					PublicKeys: []string{publicKey},
+				}
+				metadata2 := record.Metadata{
+					ID:         generators.ID("name-2", []string{publicKey}),
+					LocalID:    "name-2",
+					PublicKeys: []string{publicKey},
+				}
+
+				signature1, beforeErr := generateSignature(metadata1, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
+				Expect(beforeErr).To(BeNil())
+
+				sut1, beforeErr := record.New(metadata1, []byte{}, signature1)
+				Expect(beforeErr).To(BeNil())
+
+				sut2, beforeErr := record.New(metadata2, []byte{}, signature2)
+				Expect(beforeErr).To(BeNil())
+
+				hash1, err = sut1.Hash()
+				Expect(err).To(BeNil())
+
+				hash2, err = sut2.Hash()
+				Expect(err).To(BeNil())
+			})
+
+			It("should have different hashes", func() {
+				Expect(hash1).NotTo(Equal(hash2))
+			})
+		})
+	})
+
+	Describe("sut.SetSignature()", func() {
 	})
 })
 
@@ -353,7 +356,12 @@ func generateKeys() (string, *rsa.PrivateKey, error) {
 	return publicKeyPem, privateKey, nil
 }
 
-func generateSignature(rec record.Record, privateKey *rsa.PrivateKey) (string, error) {
+func generateSignature(metadata record.Metadata, data []byte, privateKey *rsa.PrivateKey) (string, error) {
+	rec, err := record.NewUnsignedRootRecord(metadata, data)
+	if err != nil {
+		return "", err
+	}
+
 	hash, err := rec.Hash()
 	if err != nil {
 		return "", err

@@ -187,10 +187,10 @@ var _ = Describe("UnsignedRootRecord", func() {
 					PublicKeys: []string{publicKey},
 				}
 
-				sut1, beforeErr := record.New(metadata1, []byte{})
+				sut1, beforeErr := record.NewUnsignedRootRecord(metadata1, []byte{})
 				Expect(beforeErr).To(BeNil())
 
-				sut2, beforeErr := record.New(metadata2, []byte{})
+				sut2, beforeErr := record.NewUnsignedRootRecord(metadata2, []byte{})
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut1.Hash()
@@ -216,7 +216,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
-				sut, beforeErr := record.New(metadata, []byte{})
+				sut, beforeErr := record.NewUnsignedRootRecord(metadata, []byte{})
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut.Hash()
@@ -231,7 +231,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
-				sut, beforeErr := record.New(metadata, []byte{})
+				sut, beforeErr := record.NewUnsignedRootRecord(metadata, []byte{})
 				Expect(beforeErr).To(BeNil())
 
 				hash2, err = sut.Hash()
@@ -261,10 +261,10 @@ var _ = Describe("UnsignedRootRecord", func() {
 					PublicKeys: []string{publicKey},
 				}
 
-				sut1, beforeErr := record.New(metadata1, []byte{})
+				sut1, beforeErr := record.NewUnsignedRootRecord(metadata1, []byte{})
 				Expect(beforeErr).To(BeNil())
 
-				sut2, beforeErr := record.New(metadata2, []byte{})
+				sut2, beforeErr := record.NewUnsignedRootRecord(metadata2, []byte{})
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut1.Hash()
