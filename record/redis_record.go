@@ -3,15 +3,17 @@ package record
 import (
 	"crypto"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 
 	"github.com/royvandewater/meshchain/cryptohelpers"
+	"github.com/royvandewater/meshchain/record/encoding"
 )
 
 type redisRecord struct {
 	metadata  Metadata
 	data      []byte
-	signature string
+	signature []byte
 }
 
 // Hash returns the sha256 hash of the record. This incorporates
@@ -26,9 +28,30 @@ func (record *redisRecord) Hash() ([]byte, error) {
 	return unsignedRootRecord.Hash()
 }
 
-// ToJSON serializes the record and return JSON output
-func (record *redisRecord) ToJSON() (string, error) {
-	return "", nil
+// JSON serializes the record and return JSON output
+func (record *redisRecord) JSON() (string, error) {
+	hash, err := record.Hash()
+	if err != nil {
+		return "", err
+	}
+
+	metadata, err := record.metadata.Proto()
+	if err != nil {
+		return "", err
+	}
+
+	jsonBytes, err := json.Marshal(&encoding.Record{
+		Metadata: metadata,
+		Data:     record.data,
+		Seal: &encoding.Seal{
+			Hash:      hash,
+			Signature: record.signature,
+		},
+	})
+	if err != nil {
+		return "", nil
+	}
+	return string(jsonBytes), nil
 }
 
 // validateSignature validates the signature for this version of the record
@@ -38,14 +61,13 @@ func (record *redisRecord) validateSignature() error {
 		return err
 	}
 
-	signature := []byte(record.signature)
 	hashed, err := record.Hash()
 	if err != nil {
 		return fmt.Errorf("Failed to generate Hash: %v", err.Error())
 	}
 
 	for _, publicKey := range publicKeys {
-		if nil == rsa.VerifyPSS(publicKey, crypto.SHA256, hashed, signature, nil) {
+		if nil == rsa.VerifyPSS(publicKey, crypto.SHA256, hashed, record.signature, nil) {
 			return nil
 		}
 	}

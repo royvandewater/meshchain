@@ -1,12 +1,11 @@
 package record_test
 
 import (
-	"crypto"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
+	"encoding/base64"
+	"encoding/json"
 
+	"github.com/royvandewater/meshchain/cryptohelpers"
 	"github.com/royvandewater/meshchain/record"
 	"github.com/royvandewater/meshchain/record/generators"
 
@@ -331,46 +330,88 @@ var _ = Describe("Record", func() {
 		})
 	})
 
-	Describe("sut.SetSignature()", func() {
+	Describe("sut.JSON()", func() {
+		Describe("with a record", func() {
+			var theJSON string
+			var metadata record.Metadata
+			var signature string
+
+			BeforeEach(func() {
+				publicKey, privateKey, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata = record.Metadata{
+					ID:         generators.ID("test-object", []string{publicKey}),
+					LocalID:    "test-object",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`howdy`)
+
+				signature, err = generateSignature(metadata, data, privateKey)
+				Expect(err).To(BeNil())
+
+				sut, err = record.New(metadata, data, signature)
+				Expect(err).To(BeNil())
+
+				theJSON, err = sut.JSON()
+			})
+
+			Describe("when parsed", func() {
+				var parsed struct {
+					Metadata struct {
+						ID         string   `json:"id"`
+						LocalID    string   `json:"localId"`
+						PublicKeys []string `json:"publicKeys"`
+					} `json:"metadata"`
+
+					Data string `json:"data"`
+
+					Seal struct {
+						Hash      string `json:"hash"`
+						Signature string `json:"signature"`
+					} `json:"seal"`
+				}
+
+				BeforeEach(func() {
+					itErr := json.Unmarshal([]byte(theJSON), &parsed)
+					Expect(itErr).To(BeNil())
+				})
+
+				It("should contain the metadata.ID", func() {
+					Expect(parsed.Metadata.ID).To(Equal(metadata.ID))
+				})
+
+				It("should contain the metadata.LocalID", func() {
+					Expect(parsed.Metadata.LocalID).To(Equal("test-object"))
+				})
+
+				It("should contain the metadata.PublicKeys, base64 encoded", func() {
+					for i, publicKey := range metadata.PublicKeys {
+						publicKeyBase64, itErr := cryptohelpers.RSAPublicKeyToBase64(publicKey)
+						Expect(itErr).To(BeNil())
+
+						Expect(parsed.Metadata.PublicKeys[i]).To(Equal(publicKeyBase64))
+					}
+				})
+
+				It("should contain the data, base64 encoded", func() {
+					decoded, itErr := base64.StdEncoding.DecodeString(parsed.Data)
+					Expect(itErr).To(BeNil())
+					Expect(decoded).To(Equal([]byte(`howdy`)))
+				})
+
+				It("should contain the seal.Hash", func() {
+					hashBytes, itErr := sut.Hash()
+					Expect(itErr).To(BeNil())
+
+					hash := base64.StdEncoding.EncodeToString(hashBytes)
+					Expect(parsed.Seal.Hash).To(Equal(hash))
+				})
+
+				It("should contain the signature", func() {
+					Expect(parsed.Seal.Signature).To(Equal(signature))
+				})
+			})
+		})
 	})
 })
-
-func generateKeys() (string, *rsa.PrivateKey, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 512)
-	if err != nil {
-		return "", nil, err
-	}
-
-	publicKey := privateKey.Public()
-	publicKeyDer, err := x509.MarshalPKIXPublicKey(publicKey)
-	if err != nil {
-		return "", nil, err
-	}
-
-	publicKeyBlock := pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   publicKeyDer,
-	}
-	publicKeyPem := string(pem.EncodeToMemory(&publicKeyBlock))
-	return publicKeyPem, privateKey, nil
-}
-
-func generateSignature(metadata record.Metadata, data []byte, privateKey *rsa.PrivateKey) (string, error) {
-	rec, err := record.NewUnsignedRootRecord(metadata, data)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := rec.Hash()
-	if err != nil {
-		return "", err
-	}
-
-	signatureBytes, err := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA256, hash, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return string(signatureBytes), nil
-}

@@ -68,7 +68,7 @@ func (record *unsignedRootRecord) Hash() ([]byte, error) {
 		return nil, err
 	}
 
-	bytes, err := proto.Marshal(&encoding.Record{
+	bytes, err := proto.Marshal(&encoding.UnsignedRootRecord{
 		Metadata: metadata,
 		Data:     record.data,
 	})

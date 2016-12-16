@@ -3,6 +3,7 @@ package cryptohelpers
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 )
@@ -43,4 +44,21 @@ func BuildRSAPublicKey(publicKeyString string) (*rsa.PublicKey, error) {
 	}
 
 	return publicKey, nil
+}
+
+// RSAPublicKeyToBase64 converts a publicKey given in RSA pem
+// format and converts it to base64
+func RSAPublicKeyToBase64(publicKeyStr string) (string, error) {
+	publicKey, err := BuildRSAPublicKey(publicKeyStr)
+	if err != nil {
+		return "", err
+	}
+
+	publicKeyDer, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return "", err
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(publicKeyDer)
+	return encoded, nil
 }

@@ -3,10 +3,8 @@ syntax = "proto3";
 package encoding;
 
 import "metadata.proto";
-import "seal.proto";
 
-message Record {
+message UnsignedRootRecord {
   Metadata metadata = 1;
   bytes data = 2;
-  Seal seal = 3;
 }

@@ -40,8 +40,8 @@ func (metadata *Metadata) Proto() (*encoding.Metadata, error) {
 	}
 
 	return &encoding.Metadata{
-		ID:         metadata.ID,
-		LocalID:    metadata.LocalID,
+		Id:         metadata.ID,
+		LocalId:    metadata.LocalID,
 		PublicKeys: PublicKeys,
 	}, nil
 }
