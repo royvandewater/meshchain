@@ -1,6 +1,8 @@
 package record_test
 
 import (
+	"crypto/rsa"
+
 	"github.com/royvandewater/meshchain/record"
 	"github.com/royvandewater/meshchain/record/generators"
 
@@ -13,11 +15,157 @@ var _ = Describe("UnsignedRootRecord", func() {
 	var err error
 
 	Describe("NewUnsignedRootRecord", func() {
+		Describe("When given Metadata with an ID and a publicKey", func() {
+			var publicKey string
 
+			BeforeEach(func() {
+				publicKey, _, err = generateKeys()
+				Expect(err).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`random data`)
+
+				sut, err = record.NewUnsignedRootRecord(metadata, []byte(data))
+			})
+
+			It("should not yield an error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		Describe("When created with no metadata.PublicKeys", func() {
+			BeforeEach(func() {
+				metadata := record.Metadata{
+					ID:         "whatevs",
+					PublicKeys: []string{},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.NewUnsignedRootRecord(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata must contain at least one publicKey"))
+			})
+		})
+
+		Describe("When created with no metadata.ID", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         "",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.NewUnsignedRootRecord(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata must contain an ID"))
+			})
+		})
+
+		Describe("When created with an invalid metadata.ID", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         "invalid",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.NewUnsignedRootRecord(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
+			})
+		})
+
+		Describe("When created with an metadata.ID that does not account for the publicKey", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", nil),
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.NewUnsignedRootRecord(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
+			})
+		})
+
+		Describe("When created with an metadata.ID that does not account for the localID", func() {
+			BeforeEach(func() {
+				publicKey, _, beforeErr := generateKeys()
+				Expect(beforeErr).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					LocalID:    "my-id",
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`asdf`)
+				sut, err = record.NewUnsignedRootRecord(metadata, data)
+			})
+
+			It("should yield an error", func() {
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
+			})
+		})
 	})
 
 	Describe("record.GenerateSignature", func() {
+		Describe("with an unsigned record", func() {
+			var signature string
+			var publicKey string
+			var hash []byte
 
+			BeforeEach(func() {
+				var privateKey *rsa.PrivateKey
+
+				publicKey, privateKey, err = generateKeys()
+				Expect(err).To(BeNil())
+
+				metadata := record.Metadata{
+					ID:         generators.ID("", []string{publicKey}),
+					PublicKeys: []string{publicKey},
+				}
+				data := []byte(`random data`)
+
+				sut, err = record.NewUnsignedRootRecord(metadata, []byte(data))
+				Expect(err).To(BeNil())
+
+				hash, err = sut.Hash()
+				Expect(err).To(BeNil())
+
+				signature, err = sut.GenerateSignature(privateKey)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return a signature", func() {
+				Expect(signature).NotTo(BeEmpty())
+			})
+
+			It("should be a valid signature for that privateKey", func() {
+				Expect(assertSignatureValid(hash, signature, publicKey)).To(BeNil())
+			})
+		})
 	})
 
 	Describe("record.Hash", func() {
@@ -128,106 +276,6 @@ var _ = Describe("UnsignedRootRecord", func() {
 
 			It("should have different hashes", func() {
 				Expect(hash1).NotTo(Equal(hash2))
-			})
-		})
-	})
-
-	Describe("record.ValidateMetadata", func() {
-		Describe("When given Metadata with an ID and a publicKey", func() {
-			var publicKey string
-
-			BeforeEach(func() {
-				publicKey, _, err = generateKeys()
-				Expect(err).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", []string{publicKey}),
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`random data`)
-
-				sut, err = record.NewUnsignedRootRecord(metadata, []byte(data))
-			})
-
-			It("should not yield an error", func() {
-				Expect(err).To(BeNil())
-			})
-		})
-
-		Describe("When created with no metadata.ID", func() {
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         "",
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`asdf`)
-				sut, err = record.NewUnsignedRootRecord(metadata, data)
-			})
-
-			It("should yield an error", func() {
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("metadata must contain an ID"))
-			})
-		})
-
-		Describe("When created with an invalid metadata.ID", func() {
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         "invalid",
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`asdf`)
-				sut, err = record.NewUnsignedRootRecord(metadata, data)
-			})
-
-			It("should yield an error", func() {
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
-			})
-		})
-
-		Describe("When created with an metadata.ID that does not account for the publicKey", func() {
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", nil),
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`asdf`)
-				sut, err = record.NewUnsignedRootRecord(metadata, data)
-			})
-
-			It("should yield an error", func() {
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
-			})
-		})
-
-		Describe("When created with an metadata.ID that does not account for the localID", func() {
-			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
-
-				metadata := record.Metadata{
-					ID:         generators.ID("", []string{publicKey}),
-					LocalID:    "my-id",
-					PublicKeys: []string{publicKey},
-				}
-				data := []byte(`asdf`)
-				sut, err = record.NewUnsignedRootRecord(metadata, data)
-			})
-
-			It("should yield an error", func() {
-				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(Equal("metadata.ID does not match publicKeys + localName"))
 			})
 		})
 	})

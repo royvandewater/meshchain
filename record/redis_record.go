@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"fmt"
+
+	"github.com/royvandewater/meshchain/cryptohelpers"
 )
 
 type redisRecord struct {
@@ -43,7 +45,7 @@ func (record *redisRecord) Save() error {
 // have a signature from one of the PublicKeys it returns nil when
 // there are no errors
 func (record *redisRecord) SetSignature(signature string) error {
-	publicKeys, err := buildRSAPublicKeys(record.PublicKeys())
+	publicKeys, err := cryptohelpers.BuildRSAPublicKeys(record.PublicKeys())
 	if err != nil {
 		return err
 	}

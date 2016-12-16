@@ -24,10 +24,6 @@ type UnsignedRootRecord interface {
 	// only the Data and Metadata properties, not the signature. This
 	// is the portion of the record that must be signed
 	Hash() ([]byte, error)
-
-	// ValidateMetadata ensures that metadata has least on publicKey
-	// and a valid ID
-	ValidateMetadata() error
 }
 
 // NewUnsignedRootRecord constructs a new instance of an UnsignedRootRecord.
@@ -36,7 +32,7 @@ type UnsignedRootRecord interface {
 func NewUnsignedRootRecord(metadata Metadata, data []byte) (UnsignedRootRecord, error) {
 	record := &unsignedRootRecord{metadata: metadata, data: data}
 
-	err := record.ValidateMetadata()
+	err := record.validateMetadata()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +80,10 @@ func (record *unsignedRootRecord) Hash() ([]byte, error) {
 	return hashed[:], nil // [32]byte -> []byte
 }
 
-func (record *unsignedRootRecord) ValidateMetadata() error {
+func (record *unsignedRootRecord) validateMetadata() error {
+	if len(record.metadata.PublicKeys) == 0 {
+		return fmt.Errorf("metadata must contain at least one publicKey")
+	}
 	if record.metadata.ID == "" {
 		return fmt.Errorf("metadata must contain an ID")
 	}

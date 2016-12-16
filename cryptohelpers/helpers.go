@@ -1,4 +1,4 @@
-package record
+package cryptohelpers
 
 import (
 	"crypto/rsa"
@@ -7,11 +7,13 @@ import (
 	"fmt"
 )
 
-func buildRSAPublicKeys(publicKeyStrings []string) ([]*rsa.PublicKey, error) {
+// BuildRSAPublicKeys generates rsa.PublicKey instances for an array of strings
+// representing RSA public keys in pem format
+func BuildRSAPublicKeys(publicKeyStrings []string) ([]*rsa.PublicKey, error) {
 	publicKeys := make([]*rsa.PublicKey, len(publicKeyStrings))
 
 	for i, publicKeyString := range publicKeyStrings {
-		publicKey, err := buildRSAPublicKey(publicKeyString)
+		publicKey, err := BuildRSAPublicKey(publicKeyString)
 		if err != nil {
 			return nil, fmt.Errorf("PublicKey at index '%v' is invalid: %v", i, err.Error())
 		}
@@ -22,7 +24,9 @@ func buildRSAPublicKeys(publicKeyStrings []string) ([]*rsa.PublicKey, error) {
 	return publicKeys, nil
 }
 
-func buildRSAPublicKey(publicKeyString string) (*rsa.PublicKey, error) {
+// BuildRSAPublicKey generates an rsa.PublicKey instance for a string
+// representing an RSA public key in pem format
+func BuildRSAPublicKey(publicKeyString string) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode([]byte(publicKeyString))
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse PEM block containing the public key")

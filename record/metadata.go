@@ -4,8 +4,9 @@ import (
 	"crypto/x509"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/royvandewater/meshchain/cryptohelpers"
 	"github.com/royvandewater/meshchain/record/encoding"
-	generators "github.com/royvandewater/meshchain/record/generators"
+	"github.com/royvandewater/meshchain/record/generators"
 )
 
 // Metadata defines the metadata of a record
@@ -49,7 +50,7 @@ func (metadata *Metadata) Proto() (*encoding.Metadata, error) {
 func (metadata *Metadata) publicKeysAsBytes() ([][]byte, error) {
 	var publicKeyDers [][]byte
 
-	publicKeys, err := buildRSAPublicKeys(metadata.PublicKeys)
+	publicKeys, err := cryptohelpers.BuildRSAPublicKeys(metadata.PublicKeys)
 	if err != nil {
 		return nil, err
 	}
