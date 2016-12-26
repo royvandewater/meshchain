@@ -10,7 +10,10 @@ import (
 	"github.com/royvandewater/meshchain/record/encoding"
 )
 
-type redisRecord struct {
+// signedRootRecord is a record is verified to
+// be correct at construction time, provided it's
+// constructed using NewRootRecord.
+type signedRootRecord struct {
 	metadata  Metadata
 	data      []byte
 	signature []byte
@@ -19,7 +22,7 @@ type redisRecord struct {
 // Hash returns the sha256 hash of the record. This incorporates
 // only the Data and Metadata properties, not the signature. This
 // is the portion of the record that must be signed
-func (record *redisRecord) Hash() ([]byte, error) {
+func (record *signedRootRecord) Hash() ([]byte, error) {
 	unsignedRootRecord, err := NewUnsignedRootRecord(record.metadata, record.data)
 	if err != nil {
 		return nil, err
@@ -29,7 +32,7 @@ func (record *redisRecord) Hash() ([]byte, error) {
 }
 
 // JSON serializes the record and return JSON output
-func (record *redisRecord) JSON() (string, error) {
+func (record *signedRootRecord) JSON() (string, error) {
 	hash, err := record.Hash()
 	if err != nil {
 		return "", err
@@ -55,7 +58,7 @@ func (record *redisRecord) JSON() (string, error) {
 }
 
 // validateSignature validates the signature for this version of the record
-func (record *redisRecord) validateSignature() error {
+func (record *signedRootRecord) validateSignature() error {
 	publicKeys, err := cryptohelpers.BuildRSAPublicKeys(record.metadata.PublicKeys)
 	if err != nil {
 		return err

@@ -31,7 +31,7 @@ func New(metadata Metadata, data []byte, signatureBase64 string) (RootRecord, er
 		return nil, fmt.Errorf("Failed to base64 decode metadata.signature: %v", err.Error())
 	}
 
-	record := &redisRecord{metadata, data, signature}
+	record := &signedRootRecord{metadata, data, signature}
 
 	if err := record.validateSignature(); err != nil {
 		return nil, err
