@@ -36,7 +36,7 @@ var _ = Describe("Record", func() {
 				signature, beforeErr := generateSignature(metadata, data, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut, err = record.New(metadata, data, signature)
+				sut, err = record.NewRootRecord(metadata, data, signature)
 				Expect(err).To(BeNil())
 			})
 
@@ -52,7 +52,7 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{},
 				}
 				data := []byte(`asdf`)
-				sut, err = record.New(metadata, data, "")
+				sut, err = record.NewRootRecord(metadata, data, "")
 			})
 
 			It("should yield an error", func() {
@@ -72,7 +72,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`asdf`)
 
-				sut, err = record.New(metadata, data, "shouldn't get this far")
+				sut, err = record.NewRootRecord(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`asdf`)
 
-				sut, err = record.New(metadata, data, "shoudn't get this far")
+				sut, err = record.NewRootRecord(metadata, data, "shoudn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -112,7 +112,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`asdf`)
 
-				sut, err = record.New(metadata, data, "shouldn't get this far")
+				sut, err = record.NewRootRecord(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -133,7 +133,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`asdf`)
 
-				sut, err = record.New(metadata, data, "shouldn't get this far")
+				sut, err = record.NewRootRecord(metadata, data, "shouldn't get this far")
 			})
 
 			It("should yield an error", func() {
@@ -157,7 +157,7 @@ var _ = Describe("Record", func() {
 				signature, beforeErr := generateSignature(metadata, wrongData, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				_, err = record.New(metadata, data, signature)
+				_, err = record.NewRootRecord(metadata, data, signature)
 			})
 
 			It("should yield an error", func() {
@@ -188,7 +188,7 @@ var _ = Describe("Record", func() {
 				signature, beforeErr := generateSignature(wrongMetadata, data, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				_, err = record.New(metadata, data, signature)
+				_, err = record.NewRootRecord(metadata, data, signature)
 			})
 
 			It("should yield an error", func() {
@@ -223,10 +223,10 @@ var _ = Describe("Record", func() {
 				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut1, beforeErr := record.New(metadata1, []byte{}, signature1)
+				sut1, beforeErr := record.NewRootRecord(metadata1, []byte{}, signature1)
 				Expect(beforeErr).To(BeNil())
 
-				sut2, beforeErr := record.New(metadata2, []byte{}, signature2)
+				sut2, beforeErr := record.NewRootRecord(metadata2, []byte{}, signature2)
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut1.Hash()
@@ -256,7 +256,7 @@ var _ = Describe("Record", func() {
 				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut, beforeErr := record.New(metadata, []byte{}, signature)
+				sut, beforeErr := record.NewRootRecord(metadata, []byte{}, signature)
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut.Hash()
@@ -275,7 +275,7 @@ var _ = Describe("Record", func() {
 				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut, beforeErr := record.New(metadata, []byte{}, signature)
+				sut, beforeErr := record.NewRootRecord(metadata, []byte{}, signature)
 				Expect(beforeErr).To(BeNil())
 
 				hash2, err = sut.Hash()
@@ -311,10 +311,10 @@ var _ = Describe("Record", func() {
 				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
 				Expect(beforeErr).To(BeNil())
 
-				sut1, beforeErr := record.New(metadata1, []byte{}, signature1)
+				sut1, beforeErr := record.NewRootRecord(metadata1, []byte{}, signature1)
 				Expect(beforeErr).To(BeNil())
 
-				sut2, beforeErr := record.New(metadata2, []byte{}, signature2)
+				sut2, beforeErr := record.NewRootRecord(metadata2, []byte{}, signature2)
 				Expect(beforeErr).To(BeNil())
 
 				hash1, err = sut1.Hash()
@@ -350,7 +350,7 @@ var _ = Describe("Record", func() {
 				signature, err = generateSignature(metadata, data, privateKey)
 				Expect(err).To(BeNil())
 
-				sut, err = record.New(metadata, data, signature)
+				sut, err = record.NewRootRecord(metadata, data, signature)
 				Expect(err).To(BeNil())
 
 				theJSON, err = sut.JSON()
