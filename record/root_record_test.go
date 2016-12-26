@@ -14,7 +14,7 @@ import (
 )
 
 var _ = Describe("Record", func() {
-	var sut record.Record
+	var sut record.RootRecord
 	var err error
 
 	Describe("New", func() {

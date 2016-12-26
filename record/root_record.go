@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// Record represents a single stored record
-type Record interface {
+// RootRecord represents a single stored record
+type RootRecord interface {
 	// Hash returns the sha256 hash of the record, minus the signature
 	Hash() ([]byte, error)
 
@@ -21,7 +21,7 @@ type Record interface {
 //   combined with an optional metadata.localID.
 // * A signature from one of the metadata.PublicKeys that signs a combination
 //   of both the metadata and data properties
-func New(metadata Metadata, data []byte, signatureBase64 string) (Record, error) {
+func New(metadata Metadata, data []byte, signatureBase64 string) (RootRecord, error) {
 	if _, err := NewUnsignedRootRecord(metadata, data); err != nil {
 		return nil, err
 	}
