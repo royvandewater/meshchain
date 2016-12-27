@@ -16,11 +16,11 @@ type RootRecord interface {
 
 // NewRootRecord instantiates a new record. Records must be valid at time of creation.
 // This means they must have:
-// * at least one publicKey
-// * a metadata.ID, which must be a hash of all publicKeys on the record
-//   combined with an optional metadata.localID.
-// * A signature from one of the metadata.PublicKeys that signs a combination
-//   of both the metadata and data properties
+//     * At least one publicKey
+//     * A metadata.ID, which must be a hash of all publicKeys on the record
+//       combined with an optional metadata.localID.
+//     * A signature from one of the metadata.PublicKeys that signs a combination
+//       of both the metadata and data properties
 func NewRootRecord(metadata Metadata, data []byte, signatureBase64 string) (RootRecord, error) {
 	if _, err := NewUnsignedRootRecord(metadata, data); err != nil {
 		return nil, err

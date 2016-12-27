@@ -19,8 +19,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			var publicKey string
 
 			BeforeEach(func() {
-				publicKey, _, err = generateKeys()
-				Expect(err).To(BeNil())
+				publicKey, _ = generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -54,8 +53,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 
 		Describe("When created with no metadata.ID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         "",
@@ -73,8 +71,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 
 		Describe("When created with an invalid metadata.ID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         "invalid",
@@ -92,8 +89,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 
 		Describe("When created with an metadata.ID that does not account for the publicKey", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", nil),
@@ -111,8 +107,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 
 		Describe("When created with an metadata.ID that does not account for the localID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -139,8 +134,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			BeforeEach(func() {
 				var privateKey *rsa.PrivateKey
 
-				publicKey, privateKey, err = generateKeys()
-				Expect(err).To(BeNil())
+				publicKey, privateKey = generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -173,8 +167,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata1 := record.Metadata{
 					ID:         generators.ID("name", []string{publicKey}),
@@ -209,8 +202,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -224,8 +216,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			})
 
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -247,8 +238,7 @@ var _ = Describe("UnsignedRootRecord", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata1 := record.Metadata{
 					ID:         generators.ID("name-1", []string{publicKey}),

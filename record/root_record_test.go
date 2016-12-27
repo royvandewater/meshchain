@@ -24,8 +24,7 @@ var _ = Describe("Record", func() {
 			BeforeEach(func() {
 				var privateKey *rsa.PrivateKey
 
-				publicKey, privateKey, err = generateKeys()
-				Expect(err).To(BeNil())
+				publicKey, privateKey = generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -33,8 +32,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`random data`)
 
-				signature, beforeErr := generateSignature(metadata, data, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature := generateSignature(metadata, data, privateKey)
 
 				sut, err = record.NewRootRecord(metadata, data, signature)
 				Expect(err).To(BeNil())
@@ -63,8 +61,7 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with no metadata.ID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         "",
@@ -83,8 +80,7 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with an invalid metadata.ID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         "invalid",
@@ -103,8 +99,7 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with an metadata.ID that does not account for the publicKey", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", nil),
@@ -123,8 +118,7 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with an metadata.ID that does not account for the localID", func() {
 			BeforeEach(func() {
-				publicKey, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -144,8 +138,7 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with a valid publicKey, but Signature doesn't match the data", func() {
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -154,8 +147,7 @@ var _ = Describe("Record", func() {
 				data := []byte(`asdf`)
 				wrongData := []byte(`wrong`)
 
-				signature, beforeErr := generateSignature(metadata, wrongData, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature := generateSignature(metadata, wrongData, privateKey)
 
 				_, err = record.NewRootRecord(metadata, data, signature)
 			})
@@ -168,11 +160,9 @@ var _ = Describe("Record", func() {
 
 		Describe("When created with a valid publicKey, but Signature doesn't match the metadata.publicKeys", func() {
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
-				publicKey2, _, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey2, _ := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
@@ -185,8 +175,7 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey, publicKey2},
 				}
 
-				signature, beforeErr := generateSignature(wrongMetadata, data, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature := generateSignature(wrongMetadata, data, privateKey)
 
 				_, err = record.NewRootRecord(metadata, data, signature)
 			})
@@ -203,8 +192,7 @@ var _ = Describe("Record", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata1 := record.Metadata{
 					ID:         generators.ID("name", []string{publicKey}),
@@ -217,11 +205,9 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 
-				signature1, beforeErr := generateSignature(metadata1, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature1 := generateSignature(metadata1, []byte{}, privateKey)
 
-				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature2 := generateSignature(metadata2, []byte{}, privateKey)
 
 				sut1, beforeErr := record.NewRootRecord(metadata1, []byte{}, signature1)
 				Expect(beforeErr).To(BeNil())
@@ -245,16 +231,14 @@ var _ = Describe("Record", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
 
-				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature := generateSignature(metadata, []byte{}, privateKey)
 
 				sut, beforeErr := record.NewRootRecord(metadata, []byte{}, signature)
 				Expect(beforeErr).To(BeNil())
@@ -264,16 +248,14 @@ var _ = Describe("Record", func() {
 			})
 
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata := record.Metadata{
 					ID:         generators.ID("", []string{publicKey}),
 					PublicKeys: []string{publicKey},
 				}
 
-				signature, beforeErr := generateSignature(metadata, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature := generateSignature(metadata, []byte{}, privateKey)
 
 				sut, beforeErr := record.NewRootRecord(metadata, []byte{}, signature)
 				Expect(beforeErr).To(BeNil())
@@ -291,8 +273,7 @@ var _ = Describe("Record", func() {
 			var hash1, hash2 []byte
 
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata1 := record.Metadata{
 					ID:         generators.ID("name-1", []string{publicKey}),
@@ -305,11 +286,9 @@ var _ = Describe("Record", func() {
 					PublicKeys: []string{publicKey},
 				}
 
-				signature1, beforeErr := generateSignature(metadata1, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature1 := generateSignature(metadata1, []byte{}, privateKey)
 
-				signature2, beforeErr := generateSignature(metadata2, []byte{}, privateKey)
-				Expect(beforeErr).To(BeNil())
+				signature2 := generateSignature(metadata2, []byte{}, privateKey)
 
 				sut1, beforeErr := record.NewRootRecord(metadata1, []byte{}, signature1)
 				Expect(beforeErr).To(BeNil())
@@ -337,8 +316,7 @@ var _ = Describe("Record", func() {
 			var signature string
 
 			BeforeEach(func() {
-				publicKey, privateKey, beforeErr := generateKeys()
-				Expect(beforeErr).To(BeNil())
+				publicKey, privateKey := generateKeys()
 
 				metadata = record.Metadata{
 					ID:         generators.ID("test-object", []string{publicKey}),
@@ -347,8 +325,7 @@ var _ = Describe("Record", func() {
 				}
 				data := []byte(`howdy`)
 
-				signature, err = generateSignature(metadata, data, privateKey)
-				Expect(err).To(BeNil())
+				signature = generateSignature(metadata, data, privateKey)
 
 				sut, err = record.NewRootRecord(metadata, data, signature)
 				Expect(err).To(BeNil())
