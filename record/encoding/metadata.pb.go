@@ -9,13 +9,13 @@ It is generated from these files:
 	metadata.proto
 	record.proto
 	seal.proto
-	unsigned_root_record.proto
+	unsigned_record.proto
 
 It has these top-level messages:
 	Metadata
 	Record
 	Seal
-	UnsignedRootRecord
+	UnsignedRecord
 */
 package encoding
 

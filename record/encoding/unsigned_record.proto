@@ -4,7 +4,7 @@ package encoding;
 
 import "metadata.proto";
 
-message UnsignedRootRecord {
+message UnsignedRecord {
   Metadata metadata = 1;
   bytes data = 2;
 }

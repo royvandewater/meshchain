@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -16,8 +17,8 @@ import (
 // that there must be at least one publicKey and that the ID is
 // a composition of the localID and publicKeys
 type UnsignedRootRecord interface {
-	// GenerateSignature generates a signature that incorporates
-	// the metadata and data of the record
+	// GenerateSignature generates a base64 encoded signature that
+	// incorporates the metadata and data of the record
 	GenerateSignature(privateKey *rsa.PrivateKey) (string, error)
 
 	// Hash returns the sha256 hash of the record. This incorporates
@@ -45,6 +46,8 @@ type unsignedRootRecord struct {
 	data     []byte
 }
 
+// GenerateSignature generates a base64 encoded signature that
+// incorporates the metadata and data of the record
 func (record *unsignedRootRecord) GenerateSignature(privateKey *rsa.PrivateKey) (string, error) {
 	hash, err := record.Hash()
 	if err != nil {
@@ -56,7 +59,7 @@ func (record *unsignedRootRecord) GenerateSignature(privateKey *rsa.PrivateKey) 
 		return "", err
 	}
 
-	return string(signatureBytes), nil
+	return base64.StdEncoding.EncodeToString(signatureBytes), nil
 }
 
 // Hash returns the sha256 hash of the record. This incorporates
@@ -68,7 +71,7 @@ func (record *unsignedRootRecord) Hash() ([]byte, error) {
 		return nil, err
 	}
 
-	bytes, err := proto.Marshal(&encoding.UnsignedRootRecord{
+	bytes, err := proto.Marshal(&encoding.UnsignedRecord{
 		Metadata: metadata,
 		Data:     record.data,
 	})
