@@ -1,6 +1,6 @@
 package record
 
-// UpdateRecord is a signed update record In order to be
+// UpdateRecord is a signed update record. In order to be
 // constructed, it must have valid metadata. This means
 // that there must be at least one publicKey and a valid
 // parent record (with verifiably correct ancestry), and
